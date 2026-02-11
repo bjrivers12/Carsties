@@ -1,28 +1,38 @@
 using MongoDB.Driver;
 using MongoDB.Entities;
-using SearchService.Models;
+using SearchService;
+using SearchService.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddHttpClient<AuctionSvcHttpClient>();
 
-var app = builder.Build();
-
-app.UseAuthorization();
-app.MapControllers();
-
-// Initialize the database and retrieve a DB instance
+// Init Mongo once
 var db = await DB.InitAsync(
     "SearchDb",
     MongoClientSettings.FromConnectionString(
         builder.Configuration.GetConnectionString("MongoDbConnection"))
 );
 
-// Create indexes via the fluent API on the DB instance
-await db.Index<Item>()
-    .Key(x => x.Make, KeyType.Text)
-    .Key(x => x.Model, KeyType.Text)
-    .Key(x => x.Color, KeyType.Text)
-    .CreateAsync();
+builder.Services.AddSingleton(db);
+
+var app = builder.Build();
+
+app.UseAuthorization();
+app.MapControllers();
+
+
+// Register DB for DI
+
+// Init indexes + seed
+try
+{
+    await DbInitializer.InitDb(db);
+}
+catch (Exception e)
+{
+    Console.WriteLine(e);
+}
 
 app.Run();
