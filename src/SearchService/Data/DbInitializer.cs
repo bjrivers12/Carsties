@@ -6,7 +6,7 @@ namespace SearchService.Data;
 
 public static class DbInitializer
 {
-    public static async Task InitDb(DB db)
+    public static async Task InitDb(WebApplication app, DB db)
     {
         await db.Index<Item>()
             .Key(x => x.Make, KeyType.Text)
@@ -14,15 +14,18 @@ public static class DbInitializer
             .Key(x => x.Color, KeyType.Text)
             .CreateAsync();
 
-        if (await db.CountAsync<Item>() == 0)
-        {
-            var json = await File.ReadAllTextAsync("Data/auctions.json");
+        var count = await db.CountAsync<Item>();
 
-            var items = JsonSerializer.Deserialize<List<Item>>(
-                json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        using var scope = app.Services.CreateScope();
 
-            await db.SaveAsync(items);
-        }
+        var httpClient = scope.ServiceProvider.GetRequiredService<AuctionSvcHttpClient>();
+
+        var items = await httpClient.GetItemsForSearchDb(db);
+
+        Console.WriteLine(items.Count + " returned from the aution service");
+
+        if (items.Count > 0) await db.SaveAsync(items);
+
+
     }
 }
