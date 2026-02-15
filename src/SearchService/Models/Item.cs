@@ -28,9 +28,4 @@ public class Item : Entity
     public int Mileage { get; set; }
 
     public string ImageUrl { get; set; }
-
-    internal async Task SaveAsync()
-    {
-        throw new NotImplementedException();
-    }
 }

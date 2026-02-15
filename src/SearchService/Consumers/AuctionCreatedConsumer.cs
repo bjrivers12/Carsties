@@ -4,6 +4,7 @@ using Contracts;
 using MassTransit;
 using SearchService.Models;
 using MongoDB.Entities;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 
 namespace SearchService;
@@ -11,10 +12,12 @@ namespace SearchService;
 public class AuctionCreatedConsumer : IConsumer<AuctionCreated>
 {
     private readonly IMapper _mapper;
+    private readonly DB _db;
 
-    public AuctionCreatedConsumer(IMapper mapper)
+    public AuctionCreatedConsumer(IMapper mapper, DB db)
     {
         _mapper = mapper;
+        _db = db;
     }
     public async Task Consume(ConsumeContext<AuctionCreated> context)
     {
@@ -22,6 +25,6 @@ public class AuctionCreatedConsumer : IConsumer<AuctionCreated>
 
         var item = _mapper.Map<Item>(context.Message);
 
-        await item.SaveAsync();
+        await _db.SaveAsync(item);
     }
 }
